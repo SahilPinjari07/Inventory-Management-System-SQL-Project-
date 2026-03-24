@@ -1,0 +1,181 @@
+create database Inventory_Management_System_for_Four_Wheeler;
+use Inventory_Management_System_for_Four_Wheeler;
+
+
+#Roles#  
+create table roles(r_id int primary key auto_increment,role_name varchar(50) not null,created_at timestamp default current_timestamp);
+insert into roles (role_name)values('Admin'),('Inventory Manager'),('Sales Representatives');
+select * from roles;
+
+#Users#
+create table Users (user_id int primary key auto_increment,username varchar(50) not null,Password varchar(50),role_id int,created_at timestamp default current_timestamp,foreign key(role_id) references roles(r_id));
+insert into Users (username,Password,role_id) values 
+('Admin_user','Admin123',1),
+('Inventory_Manager_user','InManager123',2),
+('Sales_user','Sales123',3);
+select * from Users;
+
+#Fuel types#  
+create table fuel_types (fuel_id int primary key auto_increment,fuel_type_name varchar(50) not null,created_at timestamp default current_timestamp);
+insert into fuel_types (fuel_type_name) values
+('Petrol'),('Diesel'),('CNG'),('EV');
+select * from fuel_types;
+
+#vehicles
+create table Vehicles(vehicle_id int primary key auto_increment,model_name varchar(50) not null,Brand varchar(100) not null,Variant varchar(100) not null,fuel_id int,price float,stock_quantity int,created_at timestamp default current_timestamp,foreign key (fuel_id) references fuel_types(fuel_id));
+insert into Vehicles (model_name,Brand,Variant,fuel_id,Price,stock_quantity)values
+('Swift','Maruti','VXI',1,600000,10),
+('Creta','Hyundai','SX',2,1200000,5),
+('Nexon EV','Tata','XZ',4,1500000,3),
+('Bolero','Mahindra','ZLX',2,950000,7);
+select * from vehicles;
+
+#Suppliers#
+create table Suppliers(supplier_id int primary key auto_increment,supplier_name varchar(100) not null,contact_person varchar(100) not null,contact_number bigint,email varchar(100) not null,address varchar(100) not null,created_at timestamp default current_timestamp);
+insert into Suppliers (supplier_name,contact_person,contact_number,email,address) values
+('ABC Motors','Ramesh Kumar',9845627653,'abcmotors@gmail.com','Delhi'),
+('XYZ Auto Parts','Suresh Singh',9105428763,'xyzautoparts@gmail.com','Mumbai'),
+('Tata Suppliers','Priya Shamrma',8087265845,'tatasuppliers@gmail.com','Pune');
+select * from Suppliers;
+
+#Spare Parts#
+create table spare_parts(part_id int primary key auto_increment,part_name varchar(100) not null,part_number varchar(100) unique,stock_quantity int,reorder_level int,supplier_id int,created_at timestamp default current_timestamp,foreign key (supplier_id) references suppliers(supplier_id));
+insert into spare_parts (part_name,part_number,stock_quantity,reorder_level,supplier_id) values
+('Brake Pad','BP101',50,10,1),
+('Clutch Plate','CP202',20,5,2),
+('Air Filter','AF303',30,8,2),
+('Battery','BT404',15,5,3);
+insert into spare_parts (part_name,part_number,stock_quantity,reorder_level,supplier_id) values
+('Wheel Rim','CT108',2,10,3);
+select * from spare_parts;
+
+#Customers#
+create table customers(customer_id int primary key auto_increment,name varchar(100) not null,contact_number bigint,email varchar(100),address varchar(100),created_at timestamp default current_timestamp);
+insert into customers(name,contact_number,email,address) values
+('Amit Verma',9023517865,'amit@gmail.com','Delhi'),
+('Neha Gupta',9518345862,'neha@gmail.com','Mumbai'),
+('Pranit Sharma',7546213582,'pranit@gmail.com','Pune'),
+('Anjali Mehta',8456721359,'anjali@gmail.com','Banglore');
+select * from customers;
+
+#Payment Status#
+create table payments(payment_id int primary key auto_increment,payment_type varchar(100) not null,created_at timestamp default current_timestamp);
+insert into payments(payment_type) values
+('Cash'),('Credit Card'),('UPI'),('Bank Transfer');
+select * from payments;
+
+#Sales#
+create table sales(sale_id int primary key auto_increment,customer_id int,vehicle_id int,sale_date timestamp default current_timestamp,quantity int,total_price float,payment_id int,
+foreign key(customer_id) references customers(customer_id),
+foreign key(vehicle_id) references vehicles(vehicle_id),
+foreign key(payment_id) references payments(payment_id));
+insert into sales (customer_id,vehicle_id,quantity,total_price,payment_id) values
+(1,1,1,600000,2),
+(2,2,1,1200000,3),
+(3,3,1,1500000,4),
+(4,4,1,950000,1);
+alter table sales add column user_id int after payment_id,add constraint fk_sales_user foreign key (user_id) references users(user_id);
+update sales set user_id=1 where sale_id = 4;
+update sales set user_id=2 where sale_id = 3;
+update sales set user_id=3 where sale_id in (1,2);
+select*from sales;
+
+#Spare Parts Sales#
+create table spare_parts_sales(sale_id int primary key auto_increment,customer_id int,part_id int,sale_date timestamp default current_timestamp,quantity int,total_price float,
+foreign key(customer_id) references customers(customer_id),
+foreign key(part_id) references spare_parts(part_id));
+insert into spare_parts_sales(customer_id,part_id,quantity,total_price) values
+(1,1,2,4000),
+(2,2,1,7000),
+(3,3,1,5000),
+(4,4,3,8000);
+select * from spare_parts_sales;
+
+#Purchase Order# 
+create table purchase_order(order_id int primary key auto_increment,supplier_id int,order_date timestamp default current_timestamp,total_amount float,order_status varchar(100),
+foreign key (supplier_id) references suppliers (supplier_id));
+insert into purchase_order (supplier_id,total_amount,order_status)values
+(1,50000,'Completed'),(2,75000,'Pending'),(3,60000,'Completed');
+select*from purchase_order;
+
+#Stock Transactions#
+create table stock_transactions(transaction_id int primary key auto_increment,item_type varchar(100),item_id int,transaction_type varchar(100),quantity int,transaction_date timestamp default current_timestamp);
+insert into stock_transactions (item_type,item_id,transaction_type,quantity)values
+('Vehicle',1,'Purchased',10),
+('Vehicle',2,'Purchased',5),
+('Part',1,'Purchased',50),
+('Part',2,'Purchased',20);
+select*from stock_transactions;
+
+#Invoices#
+create table invoices(invoice_id int primary key auto_increment,order_id int,sale_id int,issue_date timestamp default current_timestamp,amount float,payment_status varchar(100),
+foreign key(order_id) references purchase_order(order_id),
+foreign key(sale_id) references sales(sale_id));
+insert into invoices(order_id,sale_id,amount,payment_status)values
+(1,1,600000,'Paid'),
+(2,2,1200000,'Pending'),
+(3,3,1500000,'Paid');
+select*from invoices;
+
+#1.	Generate Monthly Sales Report (Find the best-selling months for vehicles.)
+select date_format (sale_date,'%Y-%M')as month,sum(total_price) as total_sales from sales group by month order by total_sales desc limit 1;
+
+#2.	Top Selling Vehicles Report (Find the most popular vehicle models.)
+select vehicles.model_name,count(sales.sale_id) as total_sold from sales 
+join vehicles on sales.vehicle_id= vehicles.vehicle_id 
+group by vehicles.model_name order by total_sold desc limit 4;
+
+#3.	Low Stock Alert for Spare Parts (Avoid outofstocks and ensure timely reorders.)
+select part_name,stock_quantity,reorder_level from spare_parts where stock_quantity <= reorder_level; 
+
+#4.	Sales Trends Over Time (For Growth Analysis for Track daily sales trends).
+select date(sale_date) as day,sum(total_price) as daily_sales from sales group by day order by day;
+
+#5.	Vehicle Stock Overview (Current Inventory  for Quick dashboard to see how many vehicles are in stock.)
+select brand,model_name,stock_quantity from vehicles order by stock_quantity desc;
+
+#6.	Spare Parts Sales Analysis.
+select sp.part_name,sum(sps.quantity) as total_sold,sum(sps.total_price) as Revenue from spare_parts_sales sps
+join spare_parts sp on sps.part_id = sp.part_id
+group by sp.part_name
+order by revenue desc;
+
+#7.	Revenue by Salesperson(Recognize top-performing sales )
+select u.username as salespeerson,sum(s.total_price) as total_revenue,count(s.sale_id) as total_sales from sales s 
+join users u on s.user_id = u.user_id 
+group by u.username
+order by total_revenue desc;
+
+#8.	Update Vehicle Stock After Sales.
+Delimiter //
+create trigger update_vehicle_stock
+after insert on Sales
+for each row
+begin
+update Vehicles
+set stock_qty = stock_qty - 1
+where vehicle_id = new.vehicle_id;
+end;
+//
+show triggers;
+select * from sales;
+
+#9.	Update Spare Parts Stock After Sale.
+Delimiter //
+create trigger UpdateSparePartsStock 
+after insert on spare_parts_sales
+for each row 
+begin
+update Spare_parts set stock_quantity = stock_quantity -new.quantity where part_id = new.part_id;
+end;
+//
+show triggers;
+select part_id, part_name, stock_quantity from spare_parts where part_id = 1;
+insert into spare_parts_sales (customer_id, part_id, quantity, total_price)
+values (1, 1, 2, 4000.00);
+select * from spare_parts;
+
+#10.Generate Invoices for Completed Sales.
+insert into invoices(sale_id,issue_date,amount,payment_status) select sale_id,now(),total_price,'Pending' from sales
+where sale_id not in (select sale_id from invoices);
+select * from invoices;
